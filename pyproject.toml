@@ -1,7 +1,7 @@
 [project]
 name = "habit-tracker-bot"
 version = "0.1.0"
-description = "Add your description here"
+description = "Telegram bot for tracking habits with FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
