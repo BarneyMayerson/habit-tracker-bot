@@ -6,7 +6,7 @@ from backend.main import app
 client = TestClient(app)
 
 
-def test_read_root():
+def test_read_root() -> None:
     response = client.get("/")
 
     assert response.status_code == status.HTTP_200_OK
@@ -17,7 +17,7 @@ def test_read_root():
     assert json_data["message"] == "Habit Tracker API is running!"
 
 
-def test_health_check():
+def test_health_check() -> None:
     response = client.get("/health")
 
     assert response.status_code == status.HTTP_200_OK
