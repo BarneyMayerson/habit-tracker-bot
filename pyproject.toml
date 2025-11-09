@@ -5,6 +5,7 @@ description = "Telegram bot for tracking habits with FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.17.1",
     "asyncpg>=0.30.0",
     "fastapi>=0.121.0",
     "httpx>=0.28.1",
@@ -42,3 +43,4 @@ markers = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101", "S105", "S106", "S108"]
+"backend/db/migrations/**/*.py" = ["E501", "W291"]
