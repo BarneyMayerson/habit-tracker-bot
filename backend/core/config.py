@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     db_host: str = os.getenv("DB_HOST", "localhost")
     db_port: str = os.getenv("DB_PORT", "5432")
     db_name: str = os.getenv("DB_DATABASE", "database")
+    test_db_url: str = os.getenv("TEST_DATABASE_URL", "")
 
     debug: bool = False
 

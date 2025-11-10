@@ -13,7 +13,13 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", f"{settings.database_url_async}?async_fallback=true")
+is_test = context.get_x_argument(as_dictionary=True).get("test", "").lower() == "true"
+if is_test:
+    # Если передан параметр test=true, применяем тестовую БД
+    config.set_main_option("sqlalchemy.url", f"{settings.test_db_url}?async_fallback=true")
+else:
+    # Иначе используем основную БД
+    config.set_main_option("sqlalchemy.url", f"{settings.database_url_async}?async_fallback=true")
 
 target_metadata = Base.metadata
 
