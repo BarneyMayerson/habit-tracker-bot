@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 
-from .api.routes import router
+from .api.v1.routes import router
 from .core.config import settings
 
 app = FastAPI(
     title="Habit Tracker API",
-    version="0.1.0",
+    version="1.0.0",
+    description="Backend API for Habit Tracker Bot",
     debug=settings.debug,
 )
 

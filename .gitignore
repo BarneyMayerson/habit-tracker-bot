@@ -17,3 +17,6 @@ wheels/
 # Environment 
 .env
 
+
+# Other
+structure.txt
