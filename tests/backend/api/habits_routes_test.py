@@ -2,6 +2,7 @@ import pytest
 from fastapi import status
 from httpx import AsyncClient
 
+from backend.models.habit import Habit
 from backend.models.user import User
 
 
@@ -15,12 +16,27 @@ class TestHabitsRoutes:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == []
 
-    async def test_get_all_habits_with_data(self, client: AsyncClient, db_session):
-        """Test getting all habits when habits exist."""
-        # надо добавить создание тестовых данных
+    async def test_get_all_active_habits(self, client: AsyncClient, test_habits: list[Habit]):
+        """Test getting all active habits when habits exist."""
         response = await client.get("/habits")
+
         assert response.status_code == status.HTTP_200_OK
-        # проверить непустой список
+
+        data = response.json()
+        assert len(data) == len(test_habits) - 1  # one of test habits is not active
+        assert all("id" in habit for habit in data)
+        assert all("title" in habit for habit in data)
+
+    async def test_get_habit_by_id(self, client: AsyncClient, test_habit: Habit):
+        """Test getting a specific habit by ID."""
+        response = await client.get(f"/habits/{test_habit.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+
+        data = response.json()
+        assert data["id"] == test_habit.id
+        assert data["title"] == test_habit.title
+        assert data["user_id"] == test_habit.user_id
 
     async def test_get_habit_by_id_not_found(self, client: AsyncClient):
         """Test getting non-existent habit returns 404."""
