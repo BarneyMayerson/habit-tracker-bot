@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.habit import Habit
-from backend.schemas.habit import HabitCreate, HabitResponse
+from backend.schemas.habit import HabitCreate, HabitResponse, HabitUpdate
 
 
 class HabitService:
@@ -36,3 +36,31 @@ class HabitService:
         await self.db.flush()
         await self.db.refresh(habit)
         return HabitResponse.model_validate(habit)
+
+    async def update_habit(self, habit_id: int, habit_data: HabitUpdate) -> HabitResponse | None:
+        """Update an existing habit."""
+
+        result = await self.db.execute(select(Habit).where(Habit.id == habit_id))
+        habit = result.scalar_one_or_none()
+        if not habit:
+            return None
+
+        update_data = habit_data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(habit, key, value)
+
+        await self.db.flush()
+        await self.db.refresh(habit, attribute_names=["updated_at"])
+        return HabitResponse.model_validate(habit)
+
+    async def delete_habit(self, habit_id: int) -> bool:
+        """Delete habit by ID. Returns True if deleted, False if not found."""
+        result = await self.db.execute(select(Habit).where(Habit.id == habit_id))
+        habit = result.scalar_one_or_none()
+
+        if not habit:
+            return False
+
+        await self.db.delete(habit)
+        await self.db.flush()
+        return True
