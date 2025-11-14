@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 class HabitBase(BaseModel):
     """Base schema for habit data."""
 
-    title: Annotated[str, StringConstraints(min_length=3, strip_whitespace=True)]
+    title: Annotated[str, StringConstraints(min_length=2, max_length=100, strip_whitespace=True)]
     description: str | None = None
 
 
@@ -20,7 +20,7 @@ class HabitCreate(HabitBase):
 class HabitUpdate(BaseModel):
     """Schema for updating an existing habit."""
 
-    title: Annotated[str, StringConstraints(min_length=1, strip_whitespace=True)] | None = None
+    title: Annotated[str, StringConstraints(min_length=2, max_length=100, strip_whitespace=True)] | None = None
     description: str | None = None
     is_active: bool | None = None
 

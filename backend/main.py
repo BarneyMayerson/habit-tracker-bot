@@ -8,6 +8,12 @@ app = FastAPI(
     version="1.0.0",
     description="Backend API for Habit Tracker Bot",
     debug=settings.debug,
+    openapi_tags=[
+        {
+            "name": "habits",
+            "description": "CRUD for the Habit entity.",
+        },
+    ],
 )
 
 app.include_router(router=v1_router)

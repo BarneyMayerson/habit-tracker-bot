@@ -98,3 +98,57 @@ class TestHabitsRoutes:
         response = await client.delete("/v1/habits/999")
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json() == {"detail": "Habit with ID 999 not found"}
+
+    async def test_create_habit_invalid_title_too_short(self, client: AsyncClient, test_user: User) -> None:
+        """Test creating a habit with a title shorter than 2 characters."""
+        habit_data = {
+            "title": "a",
+            "user_id": test_user.id,
+        }
+        response = await client.post("/v1/habits", json=habit_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        data = response.json()
+        assert any("String should have at least 2 characters" in error["msg"] for error in data["detail"])
+
+    async def test_create_habit_invalid_title_empty(self, client: AsyncClient, test_user: User) -> None:
+        """Test creating a habit with an empty title."""
+        habit_data = {
+            "title": "",
+            "user_id": test_user.id,
+        }
+        response = await client.post("/v1/habits", json=habit_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        data = response.json()
+        assert any("String should have at least 2 characters" in error["msg"] for error in data["detail"])
+
+    async def test_update_habit_invalid_title_too_short(self, client: AsyncClient, test_habit: Habit) -> None:
+        """Test updating a habit with a title shorter than 2 characters."""
+        update_data = {"title": "a"}
+        response = await client.patch(f"/v1/habits/{test_habit.id}", json=update_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        data = response.json()
+        assert any("String should have at least 2 characters" in error["msg"] for error in data["detail"])
+
+    async def test_create_habit_title_too_long(self, client: AsyncClient, test_user: User) -> None:
+        """Test creating a habit with a title longer than 100 characters."""
+        habit_data = {
+            "title": "a" * 101,
+            "user_id": test_user.id,
+        }
+        response = await client.post("/v1/habits", json=habit_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        data = response.json()
+        assert any("String should have at most 100 characters" in error["msg"] for error in data["detail"])
+
+    async def test_update_habit_title_too_long(self, client: AsyncClient, test_habit: Habit) -> None:
+        """Test updating a habit with a title longer than 100 characters."""
+        update_data = {"title": "a" * 101}
+        response = await client.patch(f"/v1/habits/{test_habit.id}", json=update_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+        data = response.json()
+        assert any("String should have at most 100 characters" in error["msg"] for error in data["detail"])
