@@ -115,3 +115,15 @@ async def delete_habit(
     deleted = await habit_service.delete_habit(habit_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Habit with ID {habit_id} not found")
+
+
+@router.post("/{habit_id}/complete", response_model=HabitResponse, status_code=status.HTTP_200_OK)
+async def complete_habit(
+    habit_id: int,
+    habit_service: Annotated[HabitService, Depends(get_habit_service)],
+) -> HabitResponse:
+    """Mark a habit as completed."""
+    habit = await habit_service.complete_habit(habit_id)
+    if not habit:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Habit not found")
+    return habit

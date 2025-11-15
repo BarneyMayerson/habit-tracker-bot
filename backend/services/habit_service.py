@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -64,3 +66,17 @@ class HabitService:
         await self.db.delete(habit)
         await self.db.flush()
         return True
+
+    async def complete_habit(self, habit_id: int) -> HabitResponse | None:
+        """Mark a habit as completed, increment completion_count and update last_completed."""
+        result = await self.db.execute(select(Habit).where(Habit.id == habit_id))
+        habit = result.scalar_one_or_none()
+
+        if not habit:
+            return None
+
+        habit.completion_count += 1
+        habit.last_completed = datetime.now(UTC)
+        await self.db.flush()
+        await self.db.refresh(habit, attribute_names=["updated_at"])
+        return HabitResponse.model_validate(habit)

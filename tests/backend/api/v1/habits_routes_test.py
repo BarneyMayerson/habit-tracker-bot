@@ -152,3 +152,22 @@ class TestHabitsRoutes:
 
         data = response.json()
         assert any("String should have at most 100 characters" in error["msg"] for error in data["detail"])
+
+    async def test_complete_habit_success(self, client: AsyncClient, test_habit: Habit) -> None:
+        """Test marking a habit as completed."""
+        initial_count = test_habit.completion_count
+        response = await client.post(f"/v1/habits/{test_habit.id}/complete")
+        assert response.status_code == status.HTTP_200_OK
+
+        data = response.json()
+        assert data["id"] == test_habit.id
+        assert data["completion_count"] == initial_count + 1
+        assert data["last_completed"] is not None
+        assert data["title"] == test_habit.title
+        assert data["user_id"] == test_habit.user_id
+
+    async def test_complete_habit_not_found(self, client: AsyncClient) -> None:
+        """Test completing a non-existent habit."""
+        response = await client.post("/v1/habits/999/complete")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json() == {"detail": "Habit not found"}

@@ -34,5 +34,6 @@ class HabitResponse(HabitBase):
     completion_count: int
     created_at: datetime
     updated_at: datetime
+    last_completed: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)

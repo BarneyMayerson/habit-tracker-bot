@@ -227,3 +227,55 @@ class TestHabitService:
         mock_db_session.execute.assert_called_once()
         mock_db_session.delete.assert_not_called()
         mock_db_session.flush.assert_not_called()
+
+        async def test_complete_habit_success(
+            self, habit_service: HabitService, mock_db_session: AsyncMock, db_habit: Habit
+        ) -> None:
+            """Test marking a habit as completed."""
+            # Мокаем результат запроса
+            mock_result = MagicMock()
+            mock_result.scalar_one_or_none.return_value = db_habit
+            mock_db_session.execute.return_value = mock_result
+
+            # Мокаем flush и refresh
+            mock_db_session.flush = AsyncMock()
+            mock_db_session.refresh = AsyncMock()
+
+            # Выполняем complete_habit
+            initial_count = db_habit.completion_count
+            result = await habit_service.complete_habit(habit_id=db_habit.id)
+
+            # Проверяем результат
+            assert result is not None
+            assert result.id == db_habit.id
+            assert result.completion_count == initial_count + 1
+            assert result.last_completed is not None
+            assert isinstance(result.last_completed, datetime)
+            assert result.updated_at >= db_habit.updated_at
+
+            # Проверяем вызовы
+            mock_db_session.execute.assert_called_once()
+            mock_db_session.flush.assert_called_once()
+            mock_db_session.refresh.assert_called_once_with(db_habit, attribute_names=["updated_at"])
+
+        async def test_complete_habit_not_found(self, habit_service: HabitService, mock_db_session: AsyncMock) -> None:
+            """Test completing a non-existent habit."""
+            # Мокаем отсутствие привычки
+            mock_result = MagicMock()
+            mock_result.scalar_one_or_none.return_value = None
+            mock_db_session.execute.return_value = mock_result
+
+            # Мокаем flush и refresh (не должны вызываться)
+            mock_db_session.flush = AsyncMock()
+            mock_db_session.refresh = AsyncMock()
+
+            # Выполняем complete_habit
+            result = await habit_service.complete_habit(habit_id=999)
+
+            # Проверяем результат
+            assert result is None
+
+            # Проверяем вызовы
+            mock_db_session.execute.assert_called_once()
+            mock_db_session.flush.assert_not_called()
+            mock_db_session.refresh.assert_not_called()

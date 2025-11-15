@@ -21,7 +21,7 @@ class Habit(Base, TimestampMixin):
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     completion_count: Mapped[int] = mapped_column(Integer, default=0)
-    last_completed: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_completed: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     def __repr__(self) -> str:
         return f"<Habit(id={self.id}, title='{self.title}', user_id={self.user_id})>"
