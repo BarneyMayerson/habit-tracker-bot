@@ -71,6 +71,7 @@ async def test_habit(db_session: AsyncSession, test_user: User) -> Habit:
         description="Test Description",
         is_active=True,
         completion_count=0,
+        last_completed=None,
     )
 
     db_session.add(habit)

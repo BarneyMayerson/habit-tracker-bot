@@ -117,13 +117,21 @@ async def delete_habit(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Habit with ID {habit_id} not found")
 
 
-@router.post("/{habit_id}/complete", response_model=HabitResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/{habit_id}/complete",
+    response_model=HabitResponse,
+    responses={422: {"description": "Habit already completed today"}},
+    status_code=status.HTTP_200_OK,
+)
 async def complete_habit(
     habit_id: int,
     habit_service: Annotated[HabitService, Depends(get_habit_service)],
 ) -> HabitResponse:
     """Mark a habit as completed."""
-    habit = await habit_service.complete_habit(habit_id)
-    if not habit:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Habit not found")
-    return habit
+    try:
+        habit = await habit_service.complete_habit(habit_id)
+        if not habit:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Habit not found")
+        return habit
+    except ValueError as ex:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(ex)) from ex

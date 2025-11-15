@@ -75,6 +75,11 @@ class HabitService:
         if not habit:
             return None
 
+        now = datetime.now(UTC)
+        if habit.last_completed and habit.last_completed.date() == now.date():
+            msg = "Habit already completed today"
+            raise ValueError(msg)
+
         habit.completion_count += 1
         habit.last_completed = datetime.now(UTC)
         await self.db.flush()

@@ -166,6 +166,14 @@ class TestHabitsRoutes:
         assert data["title"] == test_habit.title
         assert data["user_id"] == test_habit.user_id
 
+    async def test_complete_habit_already_completed_today(self, client: AsyncClient, test_habit: Habit) -> None:
+        """Test attempting to complete a habit already completed today."""
+        await client.post(f"/v1/habits/{test_habit.id}/complete")
+        response = await client.post(f"/v1/habits/{test_habit.id}/complete")
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.json() == {"detail": "Habit already completed today"}
+
     async def test_complete_habit_not_found(self, client: AsyncClient) -> None:
         """Test completing a non-existent habit."""
         response = await client.post("/v1/habits/999/complete")
