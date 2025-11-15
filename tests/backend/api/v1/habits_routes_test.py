@@ -171,3 +171,23 @@ class TestHabitsRoutes:
         response = await client.post("/v1/habits/999/complete")
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json() == {"detail": "Habit not found"}
+
+    async def test_create_habit_description_too_long(self, client: AsyncClient, test_user: User) -> None:
+        """Test creating a habit with description longer than 500 characters."""
+        habit_data = {
+            "title": "Valid Title",
+            "description": "a" * 501,
+            "user_id": test_user.id,
+        }
+        response = await client.post("/v1/habits", json=habit_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        data = response.json()
+        assert any("String should have at most 500 characters" in error["msg"] for error in data["detail"])
+
+    async def test_update_habit_description_too_long(self, client: AsyncClient, test_habit: Habit) -> None:
+        """Test updating a habit with description longer than 500 characters."""
+        update_data = {"description": "a" * 501}
+        response = await client.patch(f"/v1/habits/{test_habit.id}", json=update_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        data = response.json()
+        assert any("String should have at most 500 characters" in error["msg"] for error in data["detail"])
