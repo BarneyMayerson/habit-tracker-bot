@@ -10,6 +10,7 @@ dependencies = [
     "fastapi>=0.121.0",
     "httpx>=0.28.1",
     "pydantic-settings>=2.11.0",
+    "pyjwt>=2.10.1",
     "python-dotenv>=1.2.1",
     "sqlalchemy>=2.0.44",
     "uvicorn[standard]>=0.38.0",
@@ -41,6 +42,7 @@ asyncio_mode = "auto"
 markers = [
     "habits_routes: test habits api routes", 
     "habit_service: test habit service", 
+    "user_service: test user service", 
 ]
 
 

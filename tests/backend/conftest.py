@@ -55,9 +55,15 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient]:
 @pytest.fixture
 async def test_user(db_session: AsyncSession) -> User:
     """Фикстура для создания тестового пользователя."""
-    user = User(telegram_id=123456789, username="testuser", first_name="Jane", last_name="Doe")
+    user = User(
+        telegram_id=123456789,
+        username="testuser",
+        first_name="Jane",
+        last_name="Doe",
+        is_active=True,
+    )
     db_session.add(user)
-    await db_session.flush()  # ВАЖНО! Сохраняем изменения, но не закрываем транзакцию
+    await db_session.flush()
     await db_session.refresh(user)
     return user
 
@@ -78,6 +84,15 @@ async def test_habit(db_session: AsyncSession, test_user: User) -> Habit:
     await db_session.flush()
     await db_session.refresh(habit)
     return habit
+
+
+@pytest.fixture
+async def access_token(test_user: User, db_session: AsyncSession) -> str:
+    """Фикстура JWT токена для test_user."""
+    from backend.services.user_service import UserService
+
+    user_service = UserService(db_session)
+    return user_service.create_access_token(data={"sub": str(test_user.telegram_id)})
 
 
 @pytest.fixture
