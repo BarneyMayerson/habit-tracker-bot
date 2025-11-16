@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -31,6 +32,7 @@ class UserService:
             username=user_data.username,
             first_name=user_data.first_name,
             last_name=user_data.last_name,
+            auth_token=str(uuid.uuid4()),
         )
         self.db.add(user)
         await self.db.flush()
@@ -44,17 +46,22 @@ class UserService:
         to_encode.update({"exp": expire})
         return jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
 
-    async def authenticate_telegram_user(self, telegram_id: int) -> Token:
+    async def authenticate_telegram_user(self, telegram_id: int, auth_token: str) -> Token:
         """Authenticate a Telegram user and return a JWT token."""
-        result = await self.db.execute(select(User).where(User.telegram_id == telegram_id))
+        print(f"id = {telegram_id}, token={auth_token}")
+
+        result = await self.db.execute(
+            select(User).where(User.telegram_id == telegram_id, User.auth_token == auth_token)
+        )
         user = result.scalar_one_or_none()
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid telegram_id or auth_token")
 
         if not user.is_active:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
+        user.auth_token = None
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = self.create_access_token(data={"sub": str(user.telegram_id)}, expires_delta=access_token_expires)
         return Token(access_token=access_token, token_type="bearer")

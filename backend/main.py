@@ -13,6 +13,10 @@ app = FastAPI(
             "name": "habits",
             "description": "CRUD for the Habit entity.",
         },
+        {
+            "name": "users",
+            "description": "Telegram user authentication and management.",
+        },
     ],
 )
 

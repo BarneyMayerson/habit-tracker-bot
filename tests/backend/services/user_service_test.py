@@ -58,6 +58,7 @@ class TestUserService:
             user.is_active = True
             user.created_at = datetime.now(UTC)
             user.updated_at = datetime.now(UTC)
+            user.auth_token = "test-auth-token"
 
         mock_db_session.refresh.side_effect = refresh_side_effect
 
@@ -66,6 +67,7 @@ class TestUserService:
         assert result.telegram_id == user_data.telegram_id
         assert result.id == 1
         assert result.is_active is True
+        assert result.auth_token == "test-auth-token"
         assert isinstance(result.created_at, datetime)
         assert isinstance(result.updated_at, datetime)
         mock_db_session.add.assert_called_once()
@@ -76,12 +78,12 @@ class TestUserService:
         self, user_service: UserService, mock_db_session: AsyncMock, sample_user_data: dict
     ) -> None:
         """Test authenticating a Telegram user."""
-        mock_user = User(**sample_user_data, is_active=True)
+        mock_user = User(**sample_user_data, is_active=True, auth_token="test-auth-token")
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = mock_user
         mock_db_session.execute.return_value = mock_result
 
-        result = await user_service.authenticate_telegram_user(sample_user_data["telegram_id"])
+        result = await user_service.authenticate_telegram_user(sample_user_data["telegram_id"], "test-auth-token")
 
         assert result.access_token is not None
         assert result.token_type == "bearer"
@@ -95,6 +97,20 @@ class TestUserService:
         mock_db_session.execute.return_value = mock_result
 
         with pytest.raises(HTTPException) as exc:
-            await user_service.authenticate_telegram_user(999999999)
-        assert exc.value.status_code == 404
-        assert exc.value.detail == "User not found"
+            await user_service.authenticate_telegram_user(999999999, "some-token")
+        assert exc.value.status_code == 401
+        assert exc.value.detail == "Invalid telegram_id or auth_token"
+
+    async def test_authenticate_telegram_user_invalid_token(
+        self, user_service: UserService, mock_db_session: AsyncMock, sample_user_data: dict
+    ) -> None:
+        """Test authenticating with invalid auth_token."""
+        mock_user = User(**sample_user_data, is_active=True, auth_token="test-auth-token")
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db_session.execute.return_value = mock_result
+
+        with pytest.raises(HTTPException) as exc:
+            await user_service.authenticate_telegram_user(sample_user_data["telegram_id"], "wrong-token")
+        assert exc.value.status_code == 401
+        assert exc.value.detail == "Invalid telegram_id or auth_token"

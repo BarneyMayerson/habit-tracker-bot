@@ -41,6 +41,7 @@ addopts = ["--import-mode=importlib"]
 asyncio_mode = "auto"
 markers = [
     "habits_routes: test habits api routes", 
+    "users_routes: test users api routes", 
     "habit_service: test habit service", 
     "user_service: test user service", 
 ]

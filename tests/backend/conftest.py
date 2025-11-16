@@ -61,6 +61,7 @@ async def test_user(db_session: AsyncSession) -> User:
         first_name="Jane",
         last_name="Doe",
         is_active=True,
+        auth_token="test-auth-token",
     )
     db_session.add(user)
     await db_session.flush()
