@@ -14,7 +14,7 @@ class HabitBase(BaseModel):
 class HabitCreate(HabitBase):
     """Schema for creating a new habit."""
 
-    user_id: int
+    pass
 
 
 class HabitUpdate(BaseModel):

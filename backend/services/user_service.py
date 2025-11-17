@@ -61,7 +61,7 @@ class UserService:
         if not user.is_active:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
-        user.auth_token = None
+        # user.auth_token = None #TODO:
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = self.create_access_token(data={"sub": str(user.telegram_id)}, expires_delta=access_token_expires)
         return Token(access_token=access_token, token_type="bearer")

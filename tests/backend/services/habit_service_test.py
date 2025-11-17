@@ -1,5 +1,5 @@
 from collections.abc import AsyncGenerator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -90,11 +90,11 @@ class TestHabitService:
 
         assert result is None
 
-    async def test_create_habit(self, habit_service: HabitService, mock_db_session: AsyncMock, db_habit: Habit) -> None:
+    async def test_create_habit(self, habit_service: HabitService, mock_db_session: AsyncMock) -> None:
         """Should create and return new habit."""
         from datetime import datetime
 
-        create_data = HabitCreate(user_id=100, title="New Habit")
+        create_data = HabitCreate(title="New Habit")
 
         # Настройка моков для сессии
         mock_db_session.add = MagicMock()
@@ -105,7 +105,7 @@ class TestHabitService:
         expected_datetime = datetime(2025, 11, 5, 10, 0, tzinfo=UTC)
 
         # Настройка refresh для эмуляции присвоения всех полей
-        def refresh_side_effect(obj, attribute_names=None):
+        def refresh_side_effect(obj):
             obj.id = 2
             obj.is_active = True
             obj.completion_count = 0
@@ -115,7 +115,7 @@ class TestHabitService:
         mock_db_session.refresh.side_effect = refresh_side_effect
 
         # Вызов метода
-        result = await habit_service.create_habit(create_data)
+        result = await habit_service.create_habit(create_data, 100)
 
         # Проверки результата
         assert result.title == "New Habit"
@@ -297,3 +297,37 @@ class TestHabitService:
         mock_db_session.execute.assert_called_once()
         mock_db_session.flush.assert_not_called()
         mock_db_session.refresh.assert_not_called()
+
+    async def test_transfer_habits(self, habit_service: HabitService, mock_db_session: AsyncMock) -> None:
+        yesterday = datetime.now(UTC) - timedelta(days=1)
+        mock_habit_active = Habit(
+            id=1,
+            user_id=1,
+            title="Active Habit",
+            is_active=True,
+            completion_count=5,
+            last_completed=yesterday,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        mock_habit_done = Habit(
+            id=2,
+            user_id=1,
+            title="Done Habit",
+            is_active=True,
+            completion_count=21,
+            last_completed=None,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = [mock_habit_active, mock_habit_done]
+        mock_db_session.execute.return_value = mock_result
+        mock_db_session.flush = AsyncMock()
+
+        await habit_service.transfer_habits()
+
+        assert mock_habit_active.is_active is True
+        assert mock_habit_active.last_completed is None
+        assert mock_habit_done.is_active is False
+        mock_db_session.flush.assert_called_once()

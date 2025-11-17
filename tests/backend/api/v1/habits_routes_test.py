@@ -89,19 +89,7 @@ class TestHabitsRoutes:
         }
         response = await client.post("/v1/habits", json=habit_data)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        # assert response.json() == {"detail": "Invalid token"}
         assert response.json() == {"detail": "Not authenticated"}
-
-    async def test_create_habit_forbidden(self, client: AsyncClient, test_user: User, access_token: str) -> None:
-        """Test creating a habit for another user."""
-        habit_data = {
-            "title": "Test Habit",
-            "description": "Test Description",
-            "user_id": test_user.id + 1,
-        }
-        response = await client.post("/v1/habits", json=habit_data, headers={"Authorization": f"Bearer {access_token}"})
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.json() == {"detail": "Cannot create habit for another user"}
 
     async def test_update_habit(self, client: AsyncClient, test_habit: Habit, access_token: str) -> None:
         """Test updating an existing habit with partial data."""
@@ -257,7 +245,6 @@ class TestHabitsRoutes:
         """Test completing a habit without authentication."""
         response = await client.post(f"/v1/habits/{test_habit.id}/complete")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        # assert response.json() == {"detail": "Invalid token"}
         assert response.json() == {"detail": "Not authenticated"}
 
     async def test_complete_habit_already_completed_today(

@@ -20,6 +20,8 @@ class Settings(BaseSettings):
 
     secret_key: str
 
+    habit_duration: int = os.getenv("HABIT_DURATION", 21)
+
     @property
     def database_url(self) -> str:
         return f"{self.db_conn}://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"

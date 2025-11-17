@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.config import settings
 from backend.models.habit import Habit
 from backend.schemas.habit import HabitCreate, HabitResponse, HabitUpdate
 
@@ -31,9 +32,16 @@ class HabitService:
         habit = result.scalar_one_or_none()
         return HabitResponse.model_validate(habit) if habit else None
 
-    async def create_habit(self, habit_data: HabitCreate) -> HabitResponse:
+    async def create_habit(self, habit_data: HabitCreate, user_id: int) -> HabitResponse:
         """Create a new habit."""
-        habit = Habit(**habit_data.model_dump())
+        habit = Habit(
+            title=habit_data.title,
+            description=habit_data.description,
+            user_id=user_id,
+            is_active=True,
+            completion_count=0,
+            last_completed=None,
+        )
         self.db.add(habit)
         await self.db.flush()
         await self.db.refresh(habit)
@@ -85,3 +93,16 @@ class HabitService:
         await self.db.flush()
         await self.db.refresh(habit, attribute_names=["updated_at"])
         return HabitResponse.model_validate(habit)
+
+    async def transfer_habits(self) -> None:
+        """Transfer active habits to the next day."""
+        result = await self.db.execute(select(Habit).where(Habit.is_active))
+        habits = result.scalars().all()
+        today = datetime.now(UTC).date()
+
+        for habit in habits:
+            if habit.completion_count >= settings.habit_duration:
+                habit.is_active = False
+            elif habit.last_completed and habit.last_completed.date() < today:
+                habit.last_completed = None
+        await self.db.flush()
