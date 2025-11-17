@@ -4,10 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.config import settings
 from backend.db.session import get_db
 from backend.schemas.habit import HabitCreate, HabitResponse, HabitUpdate
 from backend.schemas.user import UserResponse
 from backend.services.habit_service import HabitService
+from backend.services.notification_service import NotificationService
 from backend.services.user_service import UserService
 
 router = APIRouter(
@@ -195,6 +197,7 @@ async def complete_habit(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(ex)) from ex
 
 
+# TODO: the routes below should be removed in production
 @router.post("/transfer")
 async def transfer_habits(
     habit_service: Annotated[HabitService, Depends(get_habit_service)],
@@ -202,3 +205,11 @@ async def transfer_habits(
     """Manually trigger habit transfer."""
     await habit_service.transfer_habits()
     return {"message": "Habits transferred"}
+
+
+@router.post("/debug/notify")
+async def debug_notify():
+    db = await anext(get_db())
+    service = NotificationService(db, settings.telegram_bot_token)
+    await service.send_daily_reminders()
+    return {"status": "reminders sent"}

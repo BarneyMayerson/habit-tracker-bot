@@ -39,7 +39,7 @@ def sample_user_data() -> dict:
 
 @pytest.mark.user_service
 class TestUserService:
-    """Unit tests for HabitService."""
+    """Unit tests for UserService."""
 
     async def test_get_or_create_user_new(
         self, user_service: UserService, mock_db_session: AsyncMock, sample_user_data: dict

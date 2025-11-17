@@ -46,6 +46,7 @@ markers = [
     "users_routes: test users api routes", 
     "habit_service: test habit service", 
     "user_service: test user service", 
+    "notification_service: test notification service", 
 ]
 
 

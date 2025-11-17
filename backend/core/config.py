@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     habit_duration: int = os.getenv("HABIT_DURATION", 21)
 
+    telegram_bot_tiken: str = os.getenv("HABIT_DURATION")
+
     @property
     def database_url(self) -> str:
         return f"{self.db_conn}://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
