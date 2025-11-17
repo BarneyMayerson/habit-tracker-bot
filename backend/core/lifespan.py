@@ -11,52 +11,69 @@ from backend.db.session import get_db
 from backend.services.habit_service import HabitService
 from backend.services.notification_service import NotificationService
 
-scheduler = AsyncIOScheduler()
+scheduler = AsyncIOScheduler(timezone="UTC")
+
+
+async def get_db_with_retry(retries: int = 5, delay: float = 2):
+    """Wait for DB to become available."""
+    for attempt in range(1, retries + 1):
+        try:
+            db = await anext(get_db())
+            logger.info("Database connection established for scheduler")
+            return db
+        except Exception as e:
+            if attempt == retries:
+                logger.error(f"Failed to connect to DB after {retries} attempts")
+                raise
+            logger.warning(f"DB not ready (attempt {attempt}/{retries}): {e}")
+            await asyncio.sleep(delay)
+    return None
+
+
+def _setup_scheduler_jobs(db_session):
+    """Configure all scheduled jobs."""
+    habit_service = HabitService(db_session)
+    notification_service = NotificationService(db_session, settings.telegram_bot_token)
+
+    scheduler.add_job(
+        habit_service.transfer_habits,
+        trigger="cron",
+        hour=0,
+        minute=0,
+        id="transfer_habits",
+        replace_existing=True,
+        max_instances=1,
+    )
+    scheduler.add_job(
+        notification_service.send_daily_reminders,
+        trigger="cron",
+        hour=9,
+        minute=0,
+        id="send_daily_reminders",
+        replace_existing=True,
+        max_instances=1,
+    )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Manage application lifecycle: start scheduler on startup, stop on shutdown."""
+    """Application lifecycle manager."""
 
-    # Startup: schedule habit transfer
-    async def schedule_habit_transfer():
-        db = await anext(get_db())
-        habit_service = HabitService(db)
-        scheduler.add_job(
-            habit_service.transfer_habits,
-            "cron",
-            hour=0,
-            minute=0,
-            timezone="UTC",
-            id="daily_reminders",
-            replace_existing=True,
-        )
-
-        db_notify = await anext(get_db())
-        notification_service = NotificationService(db_notify, settings.telegram_bot_token)
-        scheduler.add_job(
-            notification_service.send_daily_reminders,
-            "cron",
-            hour=9,
-            minute=0,
-            timezone="UTC",
-            id="daily_reminders",
-            replace_existing=True,
-        )
-
+    async def initialize_scheduler():
+        db = await get_db_with_retry()
+        _setup_scheduler_jobs(db)
         scheduler.start()
-        logger.success("Scheduler started: habit_transfer (00:00) + daily_reminders (09:00 UTC)")
+        logger.success("Scheduler started → transfer_habits (00:00 UTC), reminders (09:00 UTC)")
 
-    task = asyncio.create_task(schedule_habit_transfer())
+    task = asyncio.create_task(initialize_scheduler())
+    task.add_done_callback(lambda t: t.result() if not t.cancelled() else None)
 
     try:
         yield
     finally:
-        # Shutdown: stop scheduler
         if scheduler.running:
-            scheduler.shutdown()
+            scheduler.shutdown(wait=False)
             logger.info("Scheduler stopped")
-
         if not task.done():
             task.cancel()
             with suppress(asyncio.CancelledError):
