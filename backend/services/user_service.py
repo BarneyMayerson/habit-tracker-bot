@@ -24,7 +24,28 @@ class UserService:
         """Get or create a user by telegram_id."""
         result = await self.db.execute(select(User).where(User.telegram_id == user_data.telegram_id))
         user = result.scalar_one_or_none()
+
+        print(user_data)
+        print(user_data.first_name)
+
         if user:
+            updated = False
+            if user_data.username is not None and user.username != user_data.username:
+                print("GET USERNAME")
+                user.username = user_data.username
+                updated = True
+            if user_data.first_name is not None and user.first_name != user_data.first_name:
+                print("GET FIRST_NAME")
+                user.first_name = user_data.first_name
+                updated = True
+            if user_data.last_name is not None and user.last_name != user_data.last_name:
+                print("GET LAST_NAME")
+                user.last_name = user_data.last_name
+                updated = True
+
+            if updated:
+                await self.db.flush()
+                await self.db.refresh(user)
             return UserResponse.model_validate(user)
 
         user = User(
