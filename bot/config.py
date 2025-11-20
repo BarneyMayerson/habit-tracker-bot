@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     All values are loaded from environment variables or .env file.
     """
 
-    bot_token: str
-    ali_base_url: str = "http://backend:8000"
+    telegram_bot_token: str
+    api_base_url: str = "http://backend:8000"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf8", extra="ignore")
 

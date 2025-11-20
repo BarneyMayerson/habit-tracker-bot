@@ -5,6 +5,8 @@ description = "Telegram bot for tracking habits with FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiogram>=3.22.0",
+    "aiosqlite>=0.21.0",
     "alembic>=1.17.1",
     "apscheduler>=3.11.1",
     "asyncpg>=0.30.0",

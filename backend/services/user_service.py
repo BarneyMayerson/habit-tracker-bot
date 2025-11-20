@@ -48,8 +48,6 @@ class UserService:
 
     async def authenticate_telegram_user(self, telegram_id: int, auth_token: str) -> Token:
         """Authenticate a Telegram user and return a JWT token."""
-        print(f"id = {telegram_id}, token={auth_token}")
-
         result = await self.db.execute(
             select(User).where(User.telegram_id == telegram_id, User.auth_token == auth_token)
         )

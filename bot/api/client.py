@@ -18,7 +18,7 @@ settings = get_settings()
 
 class APIClient:
     def __init__(self, token: str | None = None):
-        self.base_url = settings.API_BASE_URL
+        self.base_url = settings.api_base_url
         self.token = token
         self.client = httpx.Client(
             base_url=self.base_url,
