@@ -20,6 +20,10 @@ async def on_startup(bot: Bot) -> None:
     log.info("Bot started.")
 
 
+async def on_shutdown(bot: Bot):
+    log.info("Bot shutting down...")
+
+
 async def main() -> None:
     bot = Bot(token=settings.telegram_bot_token, default=DefaultBotProperties(parse_mode="HTML"))
     storage = MemoryStorage()
@@ -28,7 +32,9 @@ async def main() -> None:
     dp.update.middleware(AuthMiddleware())
     dp.include_router(start.router)
     dp.include_router(habits.router)
+
     dp.startup.register(on_startup)
+    dp.shutdown.register(on_shutdown)
 
     log.info("Starting polling...")
     await dp.start_polling(bot)

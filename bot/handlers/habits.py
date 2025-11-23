@@ -22,7 +22,7 @@ async def cmd_my_habits(message: Message, api: APIClient):
         return
 
     try:
-        habits = api.get_active_habits()
+        habits = await api.get_active_habits()
         log.debug(f"Loaded {len(habits)} active habits")
     except Exception:
         log.exception("Failed to load habits")

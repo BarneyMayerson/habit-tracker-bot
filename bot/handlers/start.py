@@ -39,18 +39,19 @@ async def cmd_start(message: Message, bot, api: APIClient | None = None) -> None
 
 
 async def handle_auth_deep_link(message: Message) -> None:
-    """Авторизация по deep-link (локальная dev-версия)"""
     user = message.from_user
     telegram_id = message.from_user.id
 
-    # log.info(f"ID={user.id} | USERNAME={user.username} | FIRST={user.first_name} | LAST={user.last_name}")
     try:
         client = APIClient()
-        jwt_token = client.auth_telegram(telegram_id=telegram_id, auth_token="debug_local_auth")
+        jwt_token = await client.auth_telegram(
+            telegram_id=telegram_id,
+            auth_token="debug_local_auth",
+        )
         await save_user_token(telegram_id, jwt_token)
 
         register_client = APIClient(jwt_token)
-        register_client.request(
+        await register_client.request(
             "POST",
             "/v1/users/register",
             json={
