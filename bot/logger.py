@@ -29,7 +29,7 @@ def setup_bot_logger():
         compression="zip",
         level="DEBUG",
         encoding="utf-8",
-        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{line} - {message}",
     )
 
     return logger

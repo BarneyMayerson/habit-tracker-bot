@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.config import get_settings
-from bot.handlers import start
+from bot.handlers import habits, start
 from bot.logger import log
 from bot.middlewares.auth_middleware import AuthMiddleware
 from bot.storage import init_db
@@ -27,6 +27,7 @@ async def main() -> None:
 
     dp.update.middleware(AuthMiddleware())
     dp.include_router(start.router)
+    dp.include_router(habits.router)
     dp.startup.register(on_startup)
 
     log.info("Starting polling...")
