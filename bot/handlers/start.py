@@ -11,17 +11,14 @@ router = Router(name="start")
 @router.message(Command("start"))
 async def cmd_start(message: Message, bot, api: APIClient | None = None) -> None:
     """Обычный /start или /start auth"""
-    # Проверяем, есть ли payload (например, "auth")
     payload = None
     if isinstance(message, Message) and message.text and " " in message.text.strip():
         _, payload = message.text.strip().split(maxsplit=1)
 
-    # Если payload == "auth" — значит пользователь пришёл по deep-link
     if payload == "auth":
         await handle_auth_deep_link(message)
         return
 
-    # Обычный первый запуск
     if api:
         try:
             await api.get_active_habits()
@@ -30,7 +27,6 @@ async def cmd_start(message: Message, bot, api: APIClient | None = None) -> None
         except Exception:  # noqa: S110
             pass
 
-    # Показываем кнопку авторизации
     bot_info = await bot.get_me()
     auth_link = f"https://t.me/{bot_info.username}?start=auth"
 
@@ -47,8 +43,7 @@ async def handle_auth_deep_link(message: Message) -> None:
     user = message.from_user
     telegram_id = message.from_user.id
 
-    print(f"ID={user.id} | USERNAME={user.username} | FIRST={user.first_name} | LAST={user.last_name}")
-
+    # log.info(f"ID={user.id} | USERNAME={user.username} | FIRST={user.first_name} | LAST={user.last_name}")
     try:
         client = APIClient()
         jwt_token = client.auth_telegram(telegram_id=telegram_id, auth_token="debug_local_auth")
