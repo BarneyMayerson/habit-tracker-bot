@@ -4,6 +4,7 @@ from aiogram import F, Router
 from aiogram.types import Message
 
 from bot.api.client import APIClient
+from bot.keyboards.inline.habits import get_habit_buttons, get_refresh_button
 from bot.logger import log
 
 router = Router(name="habits")
@@ -29,29 +30,25 @@ async def cmd_my_habits(message: Message, api: APIClient):
         await message.answer("Error loading habits. Try again later.")
         return
 
-    if not habits:
-        await message.answer(
-            "You don't have any habits yet!\n\nClick <b>Add Habit</b> to create your first one.",
-            reply_markup=None,
-        )
-        return
-
-    lines = ["<b>Your Habits</b>\n"]
-    for i, habit in enumerate(habits, 1):
+    today_str = datetime.now(tz=UTC).date()
+    for habit in habits:
+        habit_id = habit["id"]
         title = habit["title"]
         description = habit.get("description", "")
-        count = habit.get("completion_count", 0)
+        count = habit["completion_count"]
+        last_completed_raw = habit.get("last_completed")
+        last_completed = last_completed_raw[:10] if last_completed_raw else ""
+        status = "Completed" if last_completed == today_str else "Pending"
 
-        last_completed = habit.get("last_completed")
-        today_str = datetime.now(tz=UTC).date()
-        status_emoji = "Completed" if last_completed and last_completed.startswith(today_str) else "Pending"
+        lines = [f"{status} <b>{title}</b>"]
 
-        lines.append(f"{status_emoji} <b>{title}</b>")
         if description:
-            short_desc = description[:70] + "..." if len(description) > 70 else description
-            lines.append(f"   {short_desc}")
-        lines.append(f"   Completed: {count} time{'s' if count != 1 else ''}\n")
+            short = description[:100] + ("..." if len(description) > 100 else "")
+            lines.append(f"<i>{short}</i>")
+        lines.append(f"Completed: {count} time{'s' if count != 1 else ''}")
 
-    text = "\n".join(lines)
+        text = "\n".join(lines)
+        kb = get_habit_buttons(habit_id=habit_id, completed_today=(last_completed == today_str))
+        await message.answer(text, reply_markup=kb)
 
-    await message.answer(text, reply_markup=None)
+    await message.answer("↑ Your habits ↑", reply_markup=get_refresh_button())
