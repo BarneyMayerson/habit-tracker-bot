@@ -4,6 +4,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
 
 from bot.api.client import APIClient
+from bot.decorators.auth import auth_required
 from bot.exceptions import HabitAlreadyCompletedError
 from bot.keyboards.inline.habits import get_habit_buttons, get_refresh_button
 from bot.logger import log
@@ -35,7 +36,6 @@ async def show_habits_list(target: Message | CallbackQuery, api: APIClient):
             await target.message.edit_text(text, reply_markup=kb)
         return
 
-    # Удаляем старые сообщения (только если это CallbackQuery)
     if isinstance(target, CallbackQuery):
         await target.message.delete()
 
@@ -71,29 +71,21 @@ async def show_habits_list(target: Message | CallbackQuery, api: APIClient):
 
 
 @router.message(F.text == "My Habits")
+@auth_required
 async def cmd_my_habits(message: Message, api: APIClient | None):
-    if not api:
-        await message.answer("Session expired. Please re-authorize using /start")
-        return
     await show_habits_list(message, api)
 
 
 @router.callback_query(F.data == "refresh_habits")
+@auth_required
 async def cb_refresh_habits(cb: CallbackQuery, api: APIClient | None):
-    if not api:
-        await cb.answer("Session expired — re-login", show_alert=True)
-        return
-
     await show_habits_list(cb, api)
     await cb.answer()
 
 
 @router.callback_query(F.data.startswith("complete:"))
+@auth_required
 async def cb_complete_habit(cb: CallbackQuery, api: APIClient | None):
-    if not api:
-        await cb.answer("Session expired", show_alert=True)
-        return
-
     habit_id = int(cb.data.split(":")[1])
 
     try:
@@ -109,11 +101,8 @@ async def cb_complete_habit(cb: CallbackQuery, api: APIClient | None):
 
 
 @router.callback_query(F.data.startswith("delete:"))
+@auth_required
 async def cb_delete_habit(cb: CallbackQuery, api: APIClient | None):
-    if not api:
-        await cb.answer("Session expired", show_alert=True)
-        return
-
     habit_id = int(cb.data.split(":")[1])
 
     try:

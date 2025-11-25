@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot.api.client import APIClient
+from bot.decorators.auth import auth_required
 from bot.handlers.habits import show_habits_list
 from bot.keyboards.main_kb import main_menu_kb
 from bot.logger import log
@@ -13,11 +14,8 @@ router = Router(name="habit_form")
 
 
 @router.message(F.text == "Add Habit", StateFilter(None))
+@auth_required
 async def cmd_add_habit(message: Message, state: FSMContext, api: APIClient | None):
-    if not api:
-        await message.answer("Please authorize first!")
-        return
-
     await state.set_state(HabitForm.waiting_for_title)
     await message.answer(
         "Add new habit\n\nSend me the <b>title</b> of your habit (e.g. 'Run 5 km', 'Read 20 pages')", reply_markup=None
@@ -113,12 +111,10 @@ async def process_description(message: Message, state: FSMContext, api: APIClien
 
 
 @router.callback_query(F.data.startswith("edit:"))
+@auth_required
 async def cb_edit_habit(cb: CallbackQuery, state: FSMContext, api: APIClient | None):
-    if not api:
-        await cb.answer("Session expired", show_alert=True)
-        return
-
     habit_id = int(cb.data.split(":")[1])
+
     try:
         habit = await api.get_habit(habit_id)
     except Exception:
