@@ -5,6 +5,7 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.api.client import APIClient
 from bot.handlers.habits import show_habits_list
+from bot.keyboards.main_kb import main_menu_kb
 from bot.logger import log
 from bot.states.habit import HabitForm
 
@@ -101,7 +102,7 @@ async def process_description(message: Message, state: FSMContext, api: APIClien
             await api.create_habit(title=title, description=description or None)
             await message.answer(
                 f"Habit created!\n\n<b>{title}</b>\n{description or '<i>No description</i>'}",
-                reply_markup=types.ReplyKeyboardRemove(),
+                reply_markup=main_menu_kb(),
             )
         except Exception:
             log.exception("Failed to create habit")
@@ -144,7 +145,7 @@ async def save_edited_habit(message: Message, state: FSMContext, api: APIClient,
 
     try:
         await api.update_habit(habit_id, title=title, description=description or None)
-        await message.answer("Habit updated!", reply_markup=types.ReplyKeyboardRemove())
+        await message.answer("Habit updated!", reply_markup=main_menu_kb())
     except Exception:
         await message.answer("Error updating habit")
 

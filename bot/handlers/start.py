@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from bot.api.client import APIClient
+from bot.keyboards.main_kb import main_menu_kb
 from bot.storage import save_user_token
 
 router = Router(name="start")
@@ -68,15 +69,3 @@ async def handle_auth_deep_link(message: Message) -> None:
         )
     except Exception as e:
         await message.answer(f"Authorization failed: {e}")
-
-
-def main_menu_kb():
-    from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="My Habits"), KeyboardButton(text="Add Habit")],
-            [KeyboardButton(text="Statistics"), KeyboardButton(text="Settings")],
-        ],
-        resize_keyboard=True,
-    )
