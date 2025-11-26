@@ -1,6 +1,8 @@
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,7 +47,7 @@ async def get_all_habits(
     current_user: Annotated[UserResponse, Depends(get_current_user)],
 ) -> list[HabitResponse]:
     """
-    Retrieve a list of all active habits.
+    Retrieve a list of all habits.
     Requires Bearer token in Authorization header.
 
     Returns:
@@ -66,6 +68,70 @@ async def get_all_active_habits(
     """
     result = await habit_service.get_all_active_habits()
     return [habit for habit in result if habit.user_id == current_user.id]
+
+
+@router.get("/stats")
+async def get_habits_stats(
+    habit_service: Annotated[HabitService, Depends(get_habit_service)],
+    current_user: Annotated[UserResponse, Depends(get_current_user)],
+) -> JSONResponse:
+    """_summary_
+    Get comprehensive statistics about user's habits.
+
+    Includes:
+    - Total active habits
+    - Completions today / this week / all time
+    - Current streak (days with at least one completion)
+    - Best performing habit
+
+    Requires Bearer token in Authorization header.
+
+    Returns:
+        JSON object with detailed statistics.
+    """
+    user_id = current_user.id
+    today = datetime.now(UTC).date()
+    week_ago = today - timedelta(days=7)
+
+    all_habits = await habit_service.get_all_habits()
+    user_habits = [h for h in all_habits if h.user_id == user_id]
+
+    if not user_habits:
+        return {
+            "total_active_habits": 0,
+            "completed_today": 0,
+            "completed_this_week": 0,
+            "total_completions_all_time": 0,
+            "current_streak_days": 0,
+            "best_habit": None,
+            "best_habit_count": 0,
+        }
+
+    completed_today = sum(1 for h in user_habits if h.last_completed and h.last_completed.date() == today)
+    completed_week = sum(1 for h in user_habits if h.last_completed and h.last_completed.date() >= week_ago)
+    total_completions = sum(h.completion_count for h in user_habits)
+    best_habit = max(user_habits, key=lambda h: h.completion_count, default=None)
+
+    # Стрик — сколько дней подряд было хотя бы одно выполнение
+    streak = 0
+    check_date = today
+    while True:
+        has_completion = any(h.last_completed and h.last_completed.date() == check_date for h in user_habits)
+        if has_completion:
+            streak += 1
+            check_date -= timedelta(days=1)
+        else:
+            break
+
+    return {
+        "total_active_habits": len(user_habits),
+        "completed_today": completed_today,
+        "completed_this_week": completed_week,
+        "total_completions_all_time": total_completions,
+        "current_streak_days": streak,
+        "best_habit": best_habit.title if best_habit else None,
+        "best_habit_count": best_habit.completion_count if best_habit else 0,
+    }
 
 
 @router.get("/{habit_id}", response_model=HabitResponse, status_code=status.HTTP_200_OK)
