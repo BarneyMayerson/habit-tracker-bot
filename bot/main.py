@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.config import get_settings
-from bot.handlers import habit_form, habits, start
+from bot.handlers import habit_form, habits, start, stats
 from bot.logger import log
 from bot.middlewares.auth_middleware import AuthMiddleware
 from bot.storage import init_db
@@ -33,6 +33,7 @@ async def main() -> None:
     dp.include_router(start.router)
     dp.include_router(habits.router)
     dp.include_router(habit_form.router)
+    dp.include_router(stats.router)
 
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
